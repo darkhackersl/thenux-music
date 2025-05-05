@@ -376,6 +376,84 @@
                 justify-content: space-between;
             }
         }
+         /* Version Switcher Button Styles */
+    .version-switcher-btn {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 9999px;
+        padding: 0.5rem 1rem;
+        color: white;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .version-switcher-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .version-switcher-btn:active {
+        transform: translateY(0);
+    }
+    
+    .version-switcher-text {
+        margin-right: 0.5rem;
+    }
+    
+    .version-switcher-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    
+    .version-switcher-btn:hover .version-switcher-icon {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(180deg);
+    }
+    
+    /* Glow effect for current version */
+    .version-switcher-btn.current {
+        background: linear-gradient(90deg, rgba(167,119,227,0.3) 0%, rgba(110,142,251,0.3) 100%);
+        box-shadow: 0 0 10px rgba(167, 119, 227, 0.5);
+        border-color: rgba(167, 119, 227, 0.5);
+    }
+    
+    /* Pulse animation for attention */
+    @keyframes pulse-glow {
+        0% { box-shadow: 0 0 0 0 rgba(167, 119, 227, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(167, 119, 227, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(167, 119, 227, 0); }
+    }
+    
+    .version-switcher-btn.highlight {
+        animation: pulse-glow 2s infinite;
+    }
+    
+    /* Dark mode styles */
+    .dark .version-switcher-btn {
+        background: rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .dark .version-switcher-btn:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+    
+    .dark .version-switcher-icon {
+        background: rgba(0, 0, 0, 0.3);
+    }
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white font-sans transition-colors duration-300">
@@ -395,13 +473,20 @@
                         <label for="darkModeToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
                     </div>
                     <span class="text-sm hidden sm:inline"><i class="fas fa-sun"></i></span>
+                    <div class="flex items-center space-x-4">
+    <!-- Version switcher button -->
+    <a href="music.html" class="version-switcher-btn">
+        <span class="version-switcher-text">Music v1</span>
+        <span class="version-switcher-icon">
+            <i class="fas fa-exchange-alt"></i>
+        </span>
+    </a>
+    
                 </div>
                 <button class="bg-white text-purple-600 px-6 py-2 rounded-full font-medium hover:bg-purple-100 transition hover-scale dark:bg-gray-800 dark:text-purple-300 dark:hover:bg-gray-700">
                     Sign In
                 </button>
-                <button class="glass-effect px-6 py-2 rounded-full font-medium hover:bg-white hover:bg-opacity-10 transition hover-scale dark:hover:bg-black dark:hover:bg-opacity-20">
-                    Register
-                </button>
+               
             </div>
         </header>
 
@@ -1105,6 +1190,28 @@
                     showNotification(`Now playing: ${title} by ${artist}`, "success");
                 });
             });
+            // Highlight current version button
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPage = window.location.pathname.split('/').pop();
+        const versionButtons = document.querySelectorAll('.version-switcher-btn');
+        
+        versionButtons.forEach(btn => {
+            if (btn.getAttribute('href') === currentPage) {
+                btn.classList.add('current');
+                btn.innerHTML = btn.innerHTML.replace('Music', 'Current: Music');
+                btn.style.pointerEvents = 'none';
+            }
+        });
+        
+        // Optional: Add temporary highlight for new version
+        if (currentPage.includes('v2')) {
+            const v2Btn = document.querySelector('[href*="v2"]');
+            if (v2Btn) {
+                v2Btn.classList.add('highlight');
+                setTimeout(() => v2Btn.classList.remove('highlight'), 5000);
+            }
+        }
+    });
             
             // Play playlist buttons
             document.querySelectorAll('.playlist-play-btn').forEach(btn => {
