@@ -273,8 +273,113 @@
             opacity: 0;
             transform: scale(0.9);
         }
+
+          /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .mobile-hidden {
+                display: none;
+            }
+            
+            .mobile-player {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, #6e8efb, #a777e3);
+                padding: 1rem;
+                box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+                z-index: 100;
+            }
+            
+            .mobile-player.dark {
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+            }
+            
+            .mobile-player-content {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+            
+            .mobile-album-art {
+                width: 50px;
+                height: 50px;
+                border-radius: 8px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            
+            .mobile-player-info {
+                flex-grow: 1;
+                min-width: 0;
+            }
+            
+            .mobile-player-title {
+                font-weight: 600;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 0.9rem;
+            }
+            
+            .mobile-player-artist {
+                font-size: 0.8rem;
+                opacity: 0.8;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .mobile-player-controls {
+                display: flex;
+                gap: 0.5rem;
+            }
+            
+            .mobile-player-btn {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,0.2);
+                transition: all 0.2s ease;
+            }
+            
+            .mobile-player-btn:hover {
+                background: rgba(255,255,255,0.3);
+                transform: scale(1.05);
+            }
+            
+            .mobile-player-btn i {
+                font-size: 1rem;
+            }
+            
+            .main-content {
+                padding-bottom: 80px; /* Space for mobile player */
+            }
+            
+            .floating-player {
+                position: relative;
+                top: auto;
+                margin-bottom: 1rem;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .header-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
+    <body class="gradient-bg min-h-screen text-white font-sans transition-colors duration-300">
+    <div class="container mx-auto px-4 py-8 main-content">
 <body class="gradient-bg min-h-screen text-white font-sans transition-colors duration-300">
     <div class="container mx-auto px-4 py-8">
         <header class="flex justify-between items-center mb-10 glass-effect rounded-2xl p-6">
@@ -474,6 +579,28 @@
                 </div>
             </div>
         </main>
+
+         <div id="mobilePlayer" class="mobile-player mobile-hidden">
+            <div class="mobile-player-content">
+                <div class="mobile-album-art">
+                    <img id="mobileAlbumArt" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23a777e3'/%3E%3Ctext x='50%' y='50%' font-size='40' text-anchor='middle' dominant-baseline='middle' fill='white'%3E🎵%3C/text%3E%3C/svg%3E" alt="Album Art">
+                </div>
+                <div class="mobile-player-info">
+                    <div id="mobileSongTitle" class="mobile-player-title">No song playing</div>
+                    <div id="mobileSongArtist" class="mobile-player-artist">Select a song</div>
+                </div>
+                <div class="mobile-player-controls">
+                    <button id="mobilePlayPauseBtn" class="mobile-player-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button id="mobileNextBtn" class="mobile-player-btn">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
         
         <div class="glass-effect rounded-2xl p-6 mt-8">
             <h2 class="text-xl font-bold mb-6">Recently Played</h2>
@@ -1015,6 +1142,125 @@
                 });
             });
         });
+
+
+  console.error = (function() {
+            const origError = console.error;
+            return function() {
+                // Filter out specific errors you want to ignore
+                const messages = Array.from(arguments).join(' ');
+                if (messages.includes('cdn.tailwindcss.com should not be used in production')) {
+                    // This is just a warning, we'll use it for development
+                    return;
+                }
+                if (messages.includes('favicon.ico')) {
+                    // We're using an emoji favicon, so we can ignore this
+                    return;
+                }
+                origError.apply(console, arguments);
+            };
+        })();
+
+        // Handle image loading errors
+        document.addEventListener('error', function(e) {
+            if (e.target.tagName === 'IMG') {
+                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23a777e3"/%3E%3Ctext x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle" fill="white"%3E🎵%3C/text%3E%3C/svg%3E';
+                e.target.alt = 'Placeholder album art';
+            }
+        }, true);
+
+        // API error handling wrapper
+        async function safeFetch(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('API request failed:', error);
+                throw error;
+            }
+        }
+
+        // Mobile player functionality
+        const mobilePlayer = document.getElementById('mobilePlayer');
+        const mobileAlbumArt = document.getElementById('mobileAlbumArt');
+        const mobileSongTitle = document.getElementById('mobileSongTitle');
+        const mobileSongArtist = document.getElementById('mobileSongArtist');
+        const mobilePlayPauseBtn = document.getElementById('mobilePlayPauseBtn');
+        const mobileNextBtn = document.getElementById('mobileNextBtn');
+
+        function updateMobilePlayer(song) {
+            if (song) {
+                mobileSongTitle.textContent = song.trackName || 'Unknown Track';
+                mobileSongArtist.textContent = song.artistName || 'Unknown Artist';
+                mobileAlbumArt.src = song.thumbnail || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23a777e3"/%3E%3Ctext x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle" fill="white"%3E🎵%3C/text%3E%3C/svg%3E';
+                mobilePlayer.classList.remove('mobile-hidden');
+            } else {
+                mobilePlayer.classList.add('mobile-hidden');
+            }
+        }
+
+        function toggleMobilePlayerVisibility() {
+            if (window.innerWidth <= 768) {
+                mobilePlayer.classList.remove('mobile-hidden');
+            } else {
+                mobilePlayer.classList.add('mobile-hidden');
+            }
+        }
+
+        // Event listeners for mobile controls
+        mobilePlayPauseBtn.addEventListener('click', togglePlayPause);
+        mobileNextBtn.addEventListener('click', playNext);
+
+        // Update mobile player when song changes
+        function playSong(song) {
+            // Your existing playSong code...
+            updateMobilePlayer(song);
+        }
+
+        // Initialize mobile layout
+        window.addEventListener('resize', toggleMobilePlayerVisibility);
+        toggleMobilePlayerVisibility();
+
+        // Modify your search function to handle errors
+        async function searchMusic() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+            
+            try {
+                const data = await safeFetch(`https://apis.davidcyriltech.my.id/search/spotify?text=${encodeURIComponent(query)}`);
+                // Process results...
+            } catch (error) {
+                showNotification("Search service is currently unavailable. Please try again later.", "error");
+                console.error("Search error:", error);
+            }
+        }
+
+        // Modify your playSong function to handle errors
+        async function playSong(song) {
+            try {
+                // Show loading state
+                currentSongTitle.textContent = "Loading...";
+                currentArtist.textContent = song.artistName;
+                currentAlbumArt.src = song.thumbnail || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23a777e3"/%3E%3Ctext x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle" fill="white"%3E🎵%3C/text%3E%3C/svg%3E';
+                updateMobilePlayer(song);
+                
+                const songData = await safeFetch(`https://apis.davidcyriltech.my.id/spotifydl?url=${encodeURIComponent(song.externalUrl)}`);
+                
+                if (songData.success && songData.DownloadLink) {
+                    // Success case...
+                } else {
+                    throw new Error("No download link available");
+                }
+            } catch (error) {
+                console.error('Error playing song:', error);
+                showNotification("Couldn't play this song. Try another one.", "error");
+                // Fallback to placeholder image
+                currentAlbumArt.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23a777e3"/%3E%3Ctext x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle" fill="white"%3E🎵%3C/text%3E%3C/svg%3E';
+                updateMobilePlayer(null);
+            }
+        }
+        
     </script>
 </body>
 </html>
