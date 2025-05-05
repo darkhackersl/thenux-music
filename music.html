@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thenux-AI Music Player v1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Base styles from original player */
+        @keyframes foldIn {
+            0% { transform: rotateX(0deg); opacity: 1; }
+            100% { transform: rotateX(90deg); opacity: 0; }
+        }
+        
+        @keyframes foldOut {
+            0% { transform: rotateX(90deg); opacity: 0; }
+            100% { transform: rotateX(0deg); opacity: 1; }
+        }
+        
+        .fold-in {
+            animation: foldIn 0.5s forwards;
+        }
+        
+        .fold-out {
+            animation: foldOut 0.5s forwards;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .wave-animation {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .wave-animation::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: wave 2s linear infinite;
+            transform: translateX(-100%);
+        }
+        
+        @keyframes wave {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        .album-art {
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.2);
+        }
+        
+        .album-art:hover {
+            transform: scale(1.05) rotate(2deg);
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+        
+        .song-item:hover {
+            transform: translateX(10px);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .song-item {
+            transition: all 0.3s ease;
+        }
+        
+        .floating-player {
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        
+        .rotate-3d {
+            transform: rotateY(10deg);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* New styles for V1 features */
+        .download-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        .lyrics-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .equalizer {
+            display: flex;
+            align-items: flex-end;
+            height: 30px;
+            gap: 3px;
+        }
+        
+        .equalizer-bar {
+            width: 3px;
+            background: white;
+            animation: equalize 1.5s infinite ease-in-out;
+        }
+        
+        @keyframes equalize {
+            0%, 100% { height: 10%; }
+            50% { height: 100%; }
+        }
+        
+        .equalizer-bar:nth-child(1) { animation-delay: 0s; }
+        .equalizer-bar:nth-child(2) { animation-delay: 0.2s; }
+        .equalizer-bar:nth-child(3) { animation-delay: 0.4s; }
+        .equalizer-bar:nth-child(4) { animation-delay: 0.6s; }
+        .equalizer-bar:nth-child(5) { animation-delay: 0.8s; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-10 glass-effect rounded-2xl p-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-purple-600 text-2xl font-bold hover-scale">
+                    T
+                </div>
+                <h1 class="text-3xl font-bold">Thenux-AI <span class="text-yellow-300">Music v1</span></h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="v2.html" class="version-switcher-btn">
+                    <span class="version-switcher-text">Music v2</span>
+                    <span class="version-switcher-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </span>
+                </a>
+                <button class="bg-white text-purple-600 px-6 py-2 rounded-full font-medium hover:bg-purple-100 transition hover-scale">
+                    Sign In
+                </button>
+                <button class="glass-effect px-6 py-2 rounded-full font-medium hover:bg-white hover:bg-opacity-10 transition hover-scale">
+                    Register
+                </button>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <div class="glass-effect rounded-2xl p-6 mb-8 wave-animation">
+                    <div class="flex items-center mb-6">
+                        <div class="relative flex-grow">
+                            <input type="text" id="searchInput" placeholder="Search for songs, artists..." 
+                                   class="w-full bg-white bg-opacity-20 rounded-full py-3 px-6 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+                            <button id="searchBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 p-2 rounded-full hover:bg-opacity-30 transition hover-scale">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4 overflow-x-auto pb-4">
+                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-1 rounded-full whitespace-nowrap transition hover-scale">All</button>
+                        <button class="bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-1 rounded-full whitespace-nowrap transition hover-scale">Pop</button>
+                        <button class="bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-1 rounded-full whitespace-nowrap transition hover-scale">Rock</button>
+                        <button class="bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-1 rounded-full whitespace-nowrap transition hover-scale">Hip Hop</button>
+                        <button class="bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-1 rounded-full whitespace-nowrap transition hover-scale">Electronic</button>
+                        <button class="bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-1 rounded-full whitespace-nowrap transition hover-scale">Jazz</button>
+                        <button class="bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-1 rounded-full whitespace-nowrap transition hover-scale">Classical</button>
+                    </div>
+                </div>
+                
+                <div id="searchResults" class="glass-effect rounded-2xl p-6 fold-out">
+                    <h2 class="text-xl font-bold mb-6">Search Results</h2>
+                    <div id="resultsContainer" class="space-y-3">
+                        <div class="text-center py-10">
+                            <i class="fas fa-music text-4xl opacity-30 mb-4 float-animation"></i>
+                            <p class="opacity-70">Search for music to get started</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lg:col-span-1">
+                <div class="floating-player glass-effect rounded-2xl p-6 sticky top-6 rotate-3d glow-animation">
+                    <div class="flex flex-col items-center mb-6">
+                        <div class="album-art w-48 h-48 bg-white bg-opacity-10 rounded-xl mb-6 flex items-center justify-center overflow-hidden">
+                            <img id="currentAlbumArt" src="https://i.scdn.co/image/ab67616d0000b273c4d00cac55ae1b4598c9bc90" alt="Album Art" class="w-full h-full object-cover">
+                        </div>
+                        <h2 id="currentSongTitle" class="text-xl font-bold text-center">No song selected</h2>
+                        <p id="currentArtist" class="text-white text-opacity-70">Search and select a song</p>
+                        
+                        <!-- Audio visualizer -->
+                        <div class="equalizer mt-4" id="audioVisualizer">
+                            <div class="equalizer-bar"></div>
+                            <div class="equalizer-bar"></div>
+                            <div class="equalizer-bar"></div>
+                            <div class="equalizer-bar"></div>
+                            <div class="equalizer-bar"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span id="currentTime">0:00</span>
+                            <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center items-center space-x-6 mb-6">
+                        <button id="prevBtn" class="text-2xl hover:text-yellow-300 transition hover-scale"><i class="fas fa-step-backward"></i></button>
+                        <button id="playPauseBtn" class="bg-white text-purple-600 w-12 h-12 rounded-full flex items-center justify-center text-2xl hover:bg-purple-100 transition hover-scale">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button id="nextBtn" class="text-2xl hover:text-yellow-300 transition hover-scale"><i class="fas fa-step-forward"></i></button>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="volumeBtn" class="hover:text-yellow-300 transition hover-scale"><i class="fas fa-volume-up"></i></button>
+                        <div class="flex space-x-3">
+                            <button id="shuffleBtn" class="hover:text-yellow-300 transition hover-scale"><i class="fas fa-random"></i></button>
+                            <button id="repeatBtn" class="hover:text-yellow-300 transition hover-scale"><i class="fas fa-redo"></i></button>
+                            <button id="downloadBtn" class="download-btn px-3 py-1 rounded-full text-sm hover-scale" title="Download">
+                                <i class="fas fa-download mr-1"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lyrics section -->
+                    <div class="lyrics-container mt-4 hidden" id="lyricsContainer">
+                        <h3 class="text-sm font-bold mb-2">Lyrics</h3>
+                        <div id="lyricsContent" class="text-sm opacity-80">
+                            Lyrics will appear here when available
+                        </div>
+                    </div>
+                    
+                    <button id="toggleLyricsBtn" class="w-full mt-2 text-sm text-white text-opacity-70 hover:text-opacity-100 transition">
+                        <i class="fas fa-chevron-down mr-1"></i> Show Lyrics
+                    </button>
+                </div>
+            </div>
+        </main>
+        
+        <div class="glass-effect rounded-2xl p-6 mt-8">
+            <h2 class="text-xl font-bold mb-6">Recently Played</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div class="song-item bg-white bg-opacity-10 rounded-xl p-4 cursor-pointer hover:bg-opacity-20 transition">
+                    <div class="w-full aspect-square bg-white bg-opacity-10 rounded-lg mb-3 overflow-hidden">
+                        <img src="https://i.scdn.co/image/ab67616d0000b273c4d00cac55ae1b4598c9bc90" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-medium truncate">Blinding Lights</h3>
+                    <p class="text-xs text-white text-opacity-60 truncate">The Weeknd</p>
+                </div>
+                <div class="song-item bg-white bg-opacity-10 rounded-xl p-4 cursor-pointer hover:bg-opacity-20 transition">
+                    <div class="w-full aspect-square bg-white bg-opacity-10 rounded-lg mb-3 overflow-hidden">
+                        <img src="https://i.scdn.co/image/ab67616d0000b2738538e1a5211e2a9abf8e1b2a" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-medium truncate">Save Your Tears</h3>
+                    <p class="text-xs text-white text-opacity-60 truncate">The Weeknd</p>
+                </div>
+                <div class="song-item bg-white bg-opacity-10 rounded-xl p-4 cursor-pointer hover:bg-opacity-20 transition">
+                    <div class="w-full aspect-square bg-white bg-opacity-10 rounded-lg mb-3 overflow-hidden">
+                        <img src="https://i.scdn.co/image/ab67616d0000b273de437d960dda1ac0a3586d97" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-medium truncate">Starboy</h3>
+                    <p class="text-xs text-white text-opacity-60 truncate">The Weeknd, Daft Punk</p>
+                </div>
+                <div class="song-item bg-white bg-opacity-10 rounded-xl p-4 cursor-pointer hover:bg-opacity-20 transition">
+                    <div class="w-full aspect-square bg-white bg-opacity-10 rounded-lg mb-3 overflow-hidden">
+                        <img src="https://i.scdn.co/image/ab67616d0000b273b254ca0983d65ede5e5a7b21" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-medium truncate">Levitating</h3>
+                    <p class="text-xs text-white text-opacity-60 truncate">Dua Lipa</p>
+                </div>
+                <div class="song-item bg-white bg-opacity-10 rounded-xl p-4 cursor-pointer hover:bg-opacity-20 transition">
+                    <div class="w-full aspect-square bg-white bg-opacity-10 rounded-lg mb-3 overflow-hidden">
+                        <img src="https://i.scdn.co/image/ab67616d0000b273f7db43292a6a99b21b51d5b4" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-medium truncate">Don't Start Now</h3>
+                    <p class="text-xs text-white text-opacity-60 truncate">Dua Lipa</p>
+                </div>
+                <div class="song-item bg-white bg-opacity-10 rounded-xl p-4 cursor-pointer hover:bg-opacity-20 transition">
+                    <div class="w-full aspect-square bg-white bg-opacity-10 rounded-lg mb-3 overflow-hidden">
+                        <img src="https://i.scdn.co/image/ab67616d0000b2734aeaaeeb0755f1d8a8b51738" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-medium truncate">Watermelon Sugar</h3>
+                    <p class="text-xs text-white text-opacity-60 truncate">Harry Styles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <audio id="audioPlayer"></audio>
+    
+    <script>
+        // DOM Elements
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const searchResults = document.getElementById('searchResults');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const progressFill = document.getElementById('progressFill');
+        const currentTime = document.getElementById('currentTime');
+        const duration = document.getElementById('duration');
+        const currentSongTitle = document.getElementById('currentSongTitle');
+        const currentArtist = document.getElementById('currentArtist');
+        const currentAlbumArt = document.getElementById('currentAlbumArt');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const repeatBtn = document.getElementById('repeatBtn');
+        const volumeBtn = document.getElementById('volumeBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const lyricsContainer = document.getElementById('lyricsContainer');
+        const lyricsContent = document.getElementById('lyricsContent');
+        const toggleLyricsBtn = document.getElementById('toggleLyricsBtn');
+        const audioVisualizer = document.getElementById('audioVisualizer');
+        
+        // State
+        let currentSong = null;
+        let isPlaying = false;
+        let isShuffled = false;
+        let isRepeating = false;
+        let isMuted = false;
+        let lastVolume = 0.7;
+        let queue = [];
+        let currentSongIndex = -1;
+        let lyricsVisible = false;
+        
+        // Event Listeners
+        searchBtn.addEventListener('click', searchMusic);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchMusic();
+            }
+        });
+        
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        audioPlayer.addEventListener('timeupdate', updateProgress);
+        audioPlayer.addEventListener('loadedmetadata', updateDuration);
+        audioPlayer.addEventListener('ended', songEnded);
+        prevBtn.addEventListener('click', playPrevious);
+        nextBtn.addEventListener('click', playNext);
+        shuffleBtn.addEventListener('click', toggleShuffle);
+        repeatBtn.addEventListener('click', toggleRepeat);
+        volumeBtn.addEventListener('click', toggleMute);
+        downloadBtn.addEventListener('click', downloadCurrentSong);
+        toggleLyricsBtn.addEventListener('click', toggleLyrics);
+        
+        // Audio visualization
+        let audioContext;
+        let analyser;
+        let dataArray;
+        
+        function initAudioVisualization() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaElementSource(audioPlayer);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            analyser.fftSize = 32;
+            
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            
+            visualize();
+        }
+        
+        function visualize() {
+            if (!analyser) return;
+            
+            analyser.getByteFrequencyData(dataArray);
+            
+            const bars = audioVisualizer.querySelectorAll('.equalizer-bar');
+            bars.forEach((bar, i) => {
+                const value = dataArray[i] / 255;
+                bar.style.height = `${value * 100}%`;
+            });
+            
+            requestAnimationFrame(visualize);
+        }
+        
+        // Functions
+        async function searchMusic() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+            
+            // Show loading state
+            resultsContainer.innerHTML = `
+                <div class="flex justify-center items-center py-10">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white rotate-animation"></div>
+                </div>
+            `;
+            
+            // Fold animation
+            searchResults.classList.remove('fold-out');
+            searchResults.classList.add('fold-in');
+            
+            setTimeout(async () => {
+                try {
+                    // Using Spotify API
+                    const response = await fetch(`https://apis.davidcyriltech.my.id/search/spotify?text=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.result && data.result.length > 0) {
+                        displayResults(data.result);
+                    } else {
+                        resultsContainer.innerHTML = `
+                            <div class="text-center py-10">
+                                <i class="fas fa-exclamation-circle text-4xl opacity-30 mb-4 float-animation"></i>
+                                <p class="opacity-70">No results found for "${query}"</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Fold animation
+                    searchResults.classList.remove('fold-in');
+                    searchResults.classList.add('fold-out');
+                } catch (error) {
+                    console.error('Error fetching music:', error);
+                    resultsContainer.innerHTML = `
+                        <div class="text-center py-10">
+                            <i class="fas fa-exclamation-triangle text-4xl opacity-30 mb-4 float-animation"></i>
+                            <p class="opacity-70">Error loading results. Please try again.</p>
+                        </div>
+                    `;
+                    
+                    // Fold animation
+                    searchResults.classList.remove('fold-in');
+                    searchResults.classList.add('fold-out');
+                }
+            }, 500);
+        }
+        
+        function displayResults(songs) {
+            resultsContainer.innerHTML = '';
+            
+            songs.forEach((song, index) => {
+                const songElement = document.createElement('div');
+                songElement.className = 'song-item glass-effect rounded-xl p-4 flex items-center space-x-4 cursor-pointer';
+                songElement.innerHTML = `
+                    <div class="w-12 h-12 bg-white bg-opacity-10 rounded-lg flex-shrink-0 overflow-hidden">
+                        <img src="${song.thumbnail || 'https://i.scdn.co/image/ab67616d0000b273c4d00cac55ae1b4598c9bc90'}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="font-medium truncate">${song.trackName}</h3>
+                        <p class="text-sm text-white text-opacity-60 truncate">${song.artistName}</p>
+                    </div>
+                    <div class="text-white text-opacity-60">
+                        ${formatDuration(song.duration)}
+                    </div>
+                `;
+                
+                songElement.addEventListener('click', () => playSong(song));
+                resultsContainer.appendChild(songElement);
+                
+                // Add delay to each item for staggered animation
+                setTimeout(() => {
+                    songElement.classList.add('fold-out');
+                }, index * 100);
+            });
+        }
+        
+        function formatDuration(duration) {
+            if (!duration) return "0:00";
+            
+            if (typeof duration === 'string' && duration.includes(':')) {
+                return duration;
+            }
+            
+            const mins = Math.floor(duration / 60);
+            const secs = Math.floor(duration % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        async function playSong(song) {
+            try {
+                // Show loading state in player
+                currentSongTitle.textContent = "Loading...";
+                currentArtist.textContent = song.artistName;
+                currentAlbumArt.src = song.thumbnail || "https://i.scdn.co/image/ab67616d0000b273c4d00cac55ae1b4598c9bc90";
+                playPauseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                // Add to queue if not already there
+                const existingIndex = queue.findIndex(s => s.trackName === song.trackName && s.artistName === song.artistName);
+                if (existingIndex === -1) {
+                    queue.push(song);
+                    currentSongIndex = queue.length - 1;
+                } else {
+                    currentSongIndex = existingIndex;
+                }
+                
+                // Fetch song details from Spotify API
+                const response = await fetch(`https://apis.davidcyriltech.my.id/spotifydl?url=${encodeURIComponent(song.externalUrl)}`);
+                const songData = await response.json();
+                
+                if (songData.success && songData.DownloadLink) {
+                    currentSong = {
+                        ...song,
+                        preview: songData.DownloadLink,
+                        thumbnail: songData.thumbnail,
+                        downloadUrl: songData.DownloadLink
+                    };
+                    
+                    audioPlayer.src = songData.DownloadLink;
+                    audioPlayer.play();
+                    
+                    // Initialize audio visualization if not already done
+                    if (!audioContext) {
+                        initAudioVisualization();
+                    }
+                    
+                    // Update UI
+                    currentSongTitle.textContent = song.trackName;
+                    currentArtist.textContent = song.artistName;
+                    currentAlbumArt.src = songData.thumbnail || "https://i.scdn.co/image/ab67616d0000b273c4d00cac55ae1b4598c9bc90";
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    isPlaying = true;
+                    
+                    // Add pulse effect to player
+                    const player = document.querySelector('.floating-player');
+                    player.classList.add('pulse');
+                    
+                    // Add album art animation
+                    const albumArt = document.querySelector('.album-art');
+                    albumArt.classList.add('float-animation');
+                    
+                    // Try to fetch lyrics
+                    fetchLyrics(song.trackName, song.artistName);
+                } else {
+                    throw new Error("No download link available");
+                }
+            } catch (error) {
+                console.error('Error playing song:', error);
+                currentSongTitle.textContent = "Error loading song";
+                currentArtist.textContent = "Please try another song";
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                isPlaying = false;
+                
+                // Show error notification
+                showNotification("Couldn't play this song. Try another one.", "error");
+            }
+        }
+        
+        async function fetchLyrics(track, artist) {
+            try {
+                lyricsContent.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading lyrics...</div>';
+                
+                // Simulate lyrics fetching (in a real app, you'd use a lyrics API)
+                setTimeout(() => {
+                    // This is mock data - replace with actual API call
+                    const mockLyrics = {
+                        "Blinding Lights": `[Verse 1]
+                        I been tryna call
+                        I been on my own for long enough
+                        Maybe you can show me how to love, maybe
+                        
+                        [Chorus]
+                        I'm just calling back to let you know
+                        I could never say it on the phone
+                        Will never let you go this time
+                        
+                        [Verse 2]
+                        I been running through the jungle
+                        I been running with the wolves
+                        To get to you...`,
+                        "Save Your Tears": `[Verse 1]
+                        Ooh, na-na, yeah
+                        I saw you dancing in a crowded room
+                        You look so happy when I'm not with you
+                        But then you saw me, caught you by surprise
+                        A single teardrop falling from your eye
+                        
+                        [Chorus]
+                        I don't know why I run away
+                        I'll make you cry when I run away...`,
+                        "Starboy": `[Verse 1]
+                        I'm tryna put you in the worst mood, ah
+                        P1 cleaner than your church shoes, ah
+                        Milli point two just to hurt you, ah
+                        All red Lamb' just to tease you, ah
+                        
+                        [Pre-Chorus]
+                        None of these toys on lease too, ah
+                        Made your whole year in a week too, yah...`
+                    };
+                    
+                    if (mockLyrics[track]) {
+                        lyricsContent.innerHTML = mockLyrics[track].replace(/\n/g, '<br>');
+                    } else {
+                        lyricsContent.innerHTML = '<div class="text-center py-4 opacity-70">Lyrics not available for this track</div>';
+                    }
+                }, 1500);
+            } catch (error) {
+                console.error('Error fetching lyrics:', error);
+                lyricsContent.innerHTML = '<div class="text-center py-4 opacity-70">Could not load lyrics</div>';
+            }
+        }
+        
+        function togglePlayPause() {
+            if (!currentSong) return;
+            
+            if (isPlaying) {
+                audioPlayer.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Remove pulse effect when paused
+                const player = document.querySelector('.floating-player');
+                player.classList.remove('pulse');
+                
+                // Pause visualization
+                if (audioContext) {
+                    audioContext.suspend();
+                }
+            } else {
+                audioPlayer.play();
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                
+                // Add pulse effect when playing
+                const player = document.querySelector('.floating-player');
+                player.classList.add('pulse');
+                
+                // Resume visualization
+                if (audioContext) {
+                    audioContext.resume();
+                }
+            }
+            
+            isPlaying = !isPlaying;
+        }
+        
+        function updateProgress() {
+            const { currentTime: ct, duration: dur } = audioPlayer;
+            const progressPercent = (ct / dur) * 100;
+            progressFill.style.width = `${progressPercent}%`;
+            
+            // Update time display
+            currentTime.textContent = formatTime(ct);
+        }
+        
+        function updateDuration() {
+            duration.textContent = formatTime(audioPlayer.duration);
+        }
+        
+        function songEnded() {
+            if (isRepeating) {
+                audioPlayer.currentTime = 0;
+                audioPlayer.play();
+            } else if (queue.length > 0) {
+                playNext();
+            } else {
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                progressFill.style.width = '0%';
+                currentTime.textContent = '0:00';
+                
+                // Remove pulse effect when song ends
+                const player = document.querySelector('.floating-player');
+                player.classList.remove('pulse');
+            }
+        }
+        
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function playPrevious() {
+            if (queue.length === 0) return;
+            
+            if (audioPlayer.currentTime > 3) {
+                // If more than 3 seconds into song, restart current song
+                audioPlayer.currentTime = 0;
+                showNotification("Restarted current song");
+            } else {
+                // Go to previous song
+                currentSongIndex = (currentSongIndex - 1 + queue.length) % queue.length;
+                playSong(queue[currentSongIndex]);
+            }
+        }
+        
+        function playNext() {
+            if (queue.length === 0) return;
+            
+            currentSongIndex = (currentSongIndex + 1) % queue.length;
+            playSong(queue[currentSongIndex]);
+        }
+        
+        function toggleShuffle() {
+            isShuffled = !isShuffled;
+            shuffleBtn.classList.toggle('text-yellow-300', isShuffled);
+            showNotification(isShuffled ? "Shuffle enabled" : "Shuffle disabled");
+            
+            if (isShuffled && queue.length > 0) {
+                // Save current song
+                const current = queue[currentSongIndex];
+                // Shuffle all except current song
+                const before = queue.slice(0, currentSongIndex);
+                const after = queue.slice(currentSongIndex + 1);
+                const shuffled = [...before, ...after].sort(() => Math.random() - 0.5);
+                queue = [current, ...shuffled];
+                currentSongIndex = 0;
+            }
+        }
+        
+        function toggleRepeat() {
+            isRepeating = !isRepeating;
+            repeatBtn.classList.toggle('text-yellow-300', isRepeating);
+            showNotification(isRepeating ? "Repeat enabled" : "Repeat disabled");
+            audioPlayer.loop = isRepeating;
+        }
+        
+        function toggleMute() {
+            isMuted = !isMuted;
+            if (isMuted) {
+                lastVolume = audioPlayer.volume;
+                audioPlayer.volume = 0;
+                volumeBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            } else {
+                audioPlayer.volume = lastVolume;
+                volumeBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+        }
+        
+        function downloadCurrentSong() {
+            if (!currentSong || !currentSong.downloadUrl) {
+                showNotification("No song available to download", "error");
+                return;
+            }
+            
+            // Create a temporary anchor element
+            const a = document.createElement('a');
+            a.href = currentSong.downloadUrl;
+            a.download = `${currentSong.trackName} - ${currentSong.artistName}.mp3` || 'download.mp3';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            showNotification("Download started", "success");
+        }
+        
+        function toggleLyrics() {
+            lyricsVisible = !lyricsVisible;
+            lyricsContainer.classList.toggle('hidden');
+            toggleLyricsBtn.innerHTML = lyricsVisible ? 
+                '<i class="fas fa-chevron-up mr-1"></i> Hide Lyrics' : 
+                '<i class="fas fa-chevron-down mr-1"></i> Show Lyrics';
+        }
+        
+        function showNotification(message, type = "info") {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 glass-effect rounded-lg px-6 py-3 flex items-center space-x-3 fold-out ${
+                type === "error" ? "bg-red-500 bg-opacity-30" : 
+                type === "success" ? "bg-green-500 bg-opacity-30" : "bg-white bg-opacity-20"
+            }`;
+            notification.innerHTML = `
+                <i class="fas ${
+                    type === "error" ? "fa-exclamation-triangle" : 
+                    type === "success" ? "fa-check-circle" : "fa-info-circle"
+                }"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('fold-out');
+                notification.classList.add('fold-in');
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+        
+        // Add some demo data on load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Add animation to album art
+            const albumArt = document.querySelector('.album-art');
+            setInterval(() => {
+                albumArt.classList.toggle('rotate-3d');
+            }, 10000);
+            
+            // Add hover effect to all hover-scale elements
+            document.querySelectorAll('.hover-scale').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    el.classList.add('glow-animation');
+                });
+                el.addEventListener('mouseleave', () => {
+                    el.classList.remove('glow-animation');
+                });
+            });
+            
+            // Click handlers for recently played songs
+            document.querySelectorAll('.song-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const title = item.querySelector('h3').textContent;
+                    const artist = item.querySelector('p').textContent;
+                    const img = item.querySelector('img')?.src;
+                    
+                    // Create mock song data
+                    const mockSong = {
+                        trackName: title,
+                        artistName: artist,
+                        thumbnail: img,
+                        duration: "3:30",
+                        externalUrl: "https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b"
+                    };
+                    
+                    playSong(mockSong);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
