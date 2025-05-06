@@ -454,6 +454,18 @@
     .dark .version-switcher-icon {
         background: rgba(0, 0, 0, 0.3);
     }
+
+         .download-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white font-sans transition-colors duration-300">
@@ -656,6 +668,9 @@
                         <div class="flex space-x-3">
                             <button class="hover:text-yellow-300 transition hover-scale"><i class="fas fa-random"></i></button>
                             <button class="hover:text-yellow-300 transition hover-scale"><i class="fas fa-redo"></i></button>
+                            <button id="downloadBtn" class="download-btn px-3 py-1 rounded-full text-sm hover-scale" title="Download">
+                                <i class="fas fa-download mr-1"></i> Download
+                            </button>
                             <button id="addToPlaylistBtn" class="hover:text-yellow-300 transition hover-scale"><i class="fas fa-plus"></i></button>
                         </div>
                     </div>
@@ -789,6 +804,7 @@
         const playlistSongsContainer = document.getElementById('playlistSongsContainer');
         const backToPlaylists = document.getElementById('backToPlaylists');
         const addToPlaylistBtn = document.getElementById('addToPlaylistBtn');
+         const downloadBtn = document.getElementById('downloadBtn');
         const addToPlaylistModal = document.getElementById('addToPlaylistModal');
         const closePlaylistModal = document.getElementById('closePlaylistModal');
         const confirmAddToPlaylist = document.getElementById('confirmAddToPlaylist');
@@ -1079,7 +1095,24 @@
                 showNotification("Couldn't play this song. Try another one.", "error");
             }
         }
-        
+        /* Ne */
+
+         function downloadCurrentSong() {
+            if (!currentSong || !currentSong.downloadUrl) {
+                showNotification("No song available to download", "error");
+                return;
+            }
+            
+            // Create a temporary anchor element
+            const a = document.createElement('a');
+            a.href = currentSong.downloadUrl;
+            a.download = `${currentSong.trackName} - ${currentSong.artistName}.mp3` || 'download.mp3';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            showNotification("Download started", "success");
+        }
         function togglePlayPause() {
             if (!currentSong) return;
             
