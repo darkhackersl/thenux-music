@@ -1106,13 +1106,37 @@
             // Create a temporary anchor element
             const a = document.createElement('a');
             a.href = currentSong.downloadUrl;
-            a.download = `${currentSong.trackName} - ${currentSong.artistName}.mp3` || 'download.mp3';
+            a.download = `${currentSong.trackName} - ${currentSong.artistName}.mp3|Thenux` || 'Thenux.mp3';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             
             showNotification("Download started", "success");
         }
+
+          function showNotification(message, type = "info") {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 glass-effect rounded-lg px-6 py-3 flex items-center space-x-3 fold-out ${
+                type === "error" ? "bg-red-500 bg-opacity-30" : 
+                type === "success" ? "bg-green-500 bg-opacity-30" : "bg-white bg-opacity-20"
+            }`;
+            notification.innerHTML = `
+                <i class="fas ${
+                    type === "error" ? "fa-exclamation-triangle" : 
+                    type === "success" ? "fa-check-circle" : "fa-info-circle"
+                }"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('fold-out');
+                notification.classList.add('fold-in');
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+        
         function togglePlayPause() {
             if (!currentSong) return;
             
